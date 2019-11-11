@@ -3,13 +3,14 @@ import 'dart:convert';
 
 import 'package:poke_flutter/bloc/bloc_provider.dart';
 import 'package:poke_flutter/models/pokemon.dart';
+import 'package:poke_flutter/models/pokemon_description.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:poke_flutter/data/poke_api_service.dart';
 
 class PokemonListBloc implements BlocBase{
   BehaviorSubject<String> _pokemonName = BehaviorSubject<String>();
   BehaviorSubject<Pokemon> _pokemonInfo = BehaviorSubject<Pokemon>();
-
+  BehaviorSubject<PokemonDescription> _pokemonDescription = BehaviorSubject<PokemonDescription>();
 
 
   void setPokemonName(String name){
@@ -24,12 +25,23 @@ class PokemonListBloc implements BlocBase{
     var decodedJson = json.decode(response.bodyString);
     final Pokemon pokeInfo = Pokemon.fromJson(decodedJson);
     _pokemonInfo.sink.add(pokeInfo);
-
   }
+
+  void setPokemonDescription(String pokemonName) async {
+    final pokeName = pokemonName.toLowerCase();
+    final response = await PokemonApiService.create().getPokemonSpecie(pokeName);
+    var decodedJson = json.decode(response.bodyString);
+    final PokemonDescription pokeDescr = PokemonDescription.fromJson(decodedJson);
+    _pokemonDescription.sink.add(pokeDescr);
+ }
 
   // streams
   Stream<String> get getPokemonName => _pokemonName.stream;
   Stream<Pokemon> get getPokemonInfo => _pokemonInfo.stream;
+  Stream<PokemonDescription> get getPokemonDescription => _pokemonDescription.stream;
+
+  Stream<bool> get getFullPokemonInfo => Observable.combineLatest2(
+      getPokemonInfo, getPokemonDescription, (pokeInfo,pokeDescription)=>true);
 
 
 
@@ -37,5 +49,6 @@ class PokemonListBloc implements BlocBase{
   void dispose() {
     _pokemonName.close();
     _pokemonInfo.close();
+    _pokemonDescription.close();
   }
 }

@@ -7,7 +7,7 @@ abstract class PokemonApiService extends ChopperService {
   @Get()
   Future<Response> getRegions();
 
-  @Get(path: '/region/name')
+  @Get(path: '/region/{name}')
   Future<Response> getRegion(@Path('name') String name);
 
   @Get(path: '/pokedex/{name}')
@@ -15,6 +15,9 @@ abstract class PokemonApiService extends ChopperService {
 
   @Get(path: '/pokemon/{name}')
   Future<Response> getPokemon(@Path('name') String name);
+
+  @Get(path: '/pokemon-species/{name}')
+  Future<Response> getPokemonSpecie(@Path('name') String name);
 
 
   static PokemonApiService create() {
