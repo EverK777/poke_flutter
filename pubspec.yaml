@@ -28,6 +28,7 @@ dependencies:
   chopper: ^3.0.1
   equatable: ^0.6.0
   transparent_image: ^1.0.0
+  cloud_firestore: ^0.11.0+2
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -66,6 +67,7 @@ flutter:
     - assets/images/sinnoh.jpg
     - assets/images/unova.png
     - assets/images/pokeball.png
+    - assets/images/miniPoke.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

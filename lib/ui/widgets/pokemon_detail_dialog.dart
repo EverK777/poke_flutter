@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:poke_flutter/bloc/bloc_provider.dart';
+import 'package:poke_flutter/bloc/pokedex_bloc/pokedex_bloc.dart';
 import 'package:poke_flutter/bloc/pokedex_bloc/pokemon_detail_bloc.dart';
+import 'package:poke_flutter/models/pokeTeam.dart';
 import 'package:poke_flutter/models/pokedex.dart';
 import 'package:poke_flutter/models/pokemon.dart';
 import 'package:poke_flutter/models/pokemon_description.dart';
@@ -12,13 +14,16 @@ import 'dart:ui' as mainColors;
 class PokemonDetailDialog extends StatelessWidget {
   final List<PokemonEntries> pokemonEntries;
   final int currentIndex;
+  final PokeDexBloc pokeDexBloc;
 
-  PokemonDetailDialog(this.pokemonEntries, this.currentIndex);
+
+  PokemonDetailDialog(this.pokemonEntries, this.currentIndex, this.pokeDexBloc);
 
   @override
   Widget build(BuildContext context) {
     int _indexChanged = currentIndex;
     int _oldIndex = 0;
+
     final PokemonListBloc bloc = BlocProvider.of<PokemonListBloc>(context);
     bloc.setPokemonName(pokemonEntries[currentIndex].pokemon_species.name);
     bloc.setPokemonInfo(pokemonEntries[currentIndex].pokemon_species.name);
@@ -107,17 +112,47 @@ class PokemonDetailDialog extends StatelessWidget {
                                 Container(
                                   height: 45,
                                   margin: EdgeInsets.only(top: 85),
-                                  child: RaisedButton(
-                                    color: Colors.redAccent ,
-                                    child: Center(
-                                      child: Text("Select pokemon",style: TextStyle(color: Colors.white),),
-                                    ),
-                                    elevation: 4,
-                                    shape: new RoundedRectangleBorder(
-                                        borderRadius: new BorderRadius.circular(5.0),
-                                       // side: BorderSide(color: Colors.red)),
-                                    ), onPressed: () {},
-                                  ),
+                                  child: StreamBuilder<Pokemon>(
+                                    stream: bloc.getPokemonInfo,
+                                    builder: (context, snapPoke){
+                                      return StreamBuilder<bool>(
+                                        stream: pokeDexBloc.isStaringCapturing,
+                                        builder: (context, snapIsEditing){
+                                          var canEdit = false;
+                                          if(snapIsEditing.hasData){
+                                            if(snapIsEditing.data){
+                                              canEdit = true;
+                                            }
+                                          }
+                                          return  Visibility(
+                                            visible: canEdit,
+                                            child: RaisedButton(
+                                              color: Colors.redAccent ,
+                                              child: Center(
+                                                child: Text("Capture pokemon",style: TextStyle(color: Colors.white),),
+                                              ),
+                                              elevation: 4,
+                                              shape: new RoundedRectangleBorder(
+                                                borderRadius: new BorderRadius.circular(5.0),
+                                                // side: BorderSide(color: Colors.red)),
+                                              ), onPressed: () {
+                                              final Poke pokeToSave = Poke(
+                                                  snapshot.data.id.toString(),
+                                                  snapshot.data.name,
+                                                  _getImagePath(_indexChanged),
+                                                  flavorText(snapshot.data),
+                                                  snapPoke.data.height.toString(),
+                                                  snapPoke.data.weight.toString()
+                                              );
+                                              pokeDexBloc.addPokemon(pokeToSave);
+                                              pokemonEntries[_indexChanged].isCaptured = true;
+                                            },
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  )
                                 )
                               ],
                               physics: BouncingScrollPhysics(),
@@ -132,57 +167,68 @@ class PokemonDetailDialog extends StatelessWidget {
                   top: 30.0,
                   left: 0.0,
                   right: 0.0,
-                  child: Swiper(
-                      itemBuilder: (BuildContext context, int index) {
-                        return FadeInImage.memoryNetwork(
-                            height: 150,
-                            width: 150,
-                            placeholder: kTransparentImage,
-                            image: _getImagePath(index));
-                      },
-                      itemCount: pokemonEntries.length,
-                      layout: SwiperLayout.CUSTOM,
-                      onIndexChanged: (index) {
-                        var newIndex = index;
-                        if (newIndex == pokemonEntries.length - 1 &&
-                            _oldIndex == 0) {
-                          newIndex = index * -1;
-                        }
+                  child:
+                      StreamBuilder(
+                        stream: pokeDexBloc.numberOfPokemonsPicked,
+                        builder: (context,_){
+                          return   Swiper(
+                              itemBuilder: (BuildContext context, int index) {
+                                return !pokemonEntries[index].isCaptured ? FadeInImage.memoryNetwork(
+                                    height: 150,
+                                    width: 150,
+                                    placeholder: kTransparentImage,
+                                    image: _getImagePath(index)):
+                                Image.asset(
+                                  'assets/images/miniPoke.png',
+                                  width: 150,
+                                  height: 150,
+                                );
+                              },
+                              itemCount: pokemonEntries.length,
+                              layout: SwiperLayout.CUSTOM,
+                              onIndexChanged: (index) {
+                                var newIndex = index;
+                                if (newIndex == pokemonEntries.length - 1 &&
+                                    _oldIndex == 0) {
+                                  newIndex = index * -1;
+                                }
 
-                        if (newIndex == 0) {
-                          _indexChanged = currentIndex;
-                        } else if (_oldIndex < newIndex) {
-                          _indexChanged = _indexChanged + 1;
-                        } else if (_oldIndex > newIndex) {
-                          _indexChanged = _indexChanged - 1;
-                        }
+                                if (newIndex == 0) {
+                                  _indexChanged = currentIndex;
+                                } else if (_oldIndex < newIndex) {
+                                  _indexChanged = _indexChanged + 1;
+                                } else if (_oldIndex > newIndex) {
+                                  _indexChanged = _indexChanged - 1;
+                                }
 
-                        if (_indexChanged > pokemonEntries.length - 1) {
-                          _indexChanged = 0;
-                        } else if (_indexChanged < 0) {
-                          _indexChanged = pokemonEntries.length - 1;
-                        }
+                                if (_indexChanged > pokemonEntries.length - 1) {
+                                  _indexChanged = 0;
+                                } else if (_indexChanged < 0) {
+                                  _indexChanged = pokemonEntries.length - 1;
+                                }
 
-                        bloc.setPokemonName(
-                            pokemonEntries[_indexChanged].pokemon_species.name);
-                        _oldIndex = index;
-                        bloc.setPokemonDescription(
-                            pokemonEntries[_indexChanged].pokemon_species.name);
-                        bloc.setPokemonInfo(
-                            pokemonEntries[_indexChanged].pokemon_species.name);
-                      },
-                      itemWidth: 150,
-                      itemHeight: 150,
-                      viewportFraction: 0.8,
-                      customLayoutOption: CustomLayoutOption(
-                              stateCount: 3, startIndex: currentIndex - 1)
-                          .addScale([0.5, 1, 0.5], Alignment.center).addOpacity(
-                              [0.8, 1, 0.8]).addTranslate([
-                        /// offset of every item
-                        new Offset(-200.0, -10.0),
-                        new Offset(0.0, 0.0),
-                        new Offset(200.0, -10.0)
-                      ])),
+                                bloc.setPokemonName(
+                                    pokemonEntries[_indexChanged].pokemon_species.name);
+                                _oldIndex = index;
+                                bloc.setPokemonDescription(
+                                    pokemonEntries[_indexChanged].pokemon_species.name);
+                                bloc.setPokemonInfo(
+                                    pokemonEntries[_indexChanged].pokemon_species.name);
+                              },
+                              itemWidth: 150,
+                              itemHeight: 150,
+                              viewportFraction: 0.8,
+                              customLayoutOption: CustomLayoutOption(
+                                  stateCount: 3, startIndex: currentIndex - 1)
+                                  .addScale([0.5, 1, 0.5], Alignment.center).addOpacity(
+                                  [0.8, 1, 0.8]).addTranslate([
+                                /// offset of every item
+                                new Offset(-200.0, -10.0),
+                                new Offset(0.0, 0.0),
+                                new Offset(200.0, -10.0)
+                              ]));
+                        }
+                      )
                 )
               ],
             ),
@@ -239,20 +285,20 @@ class PokemonDetailDialog extends StatelessWidget {
   }
 
   String _getImagePath(int index) {
-    String pokemonUrl = pokemonEntries[index].pokemon_species.url;
-    pokemonUrl =
-        pokemonUrl.replaceAll('https://pokeapi.co/api/v2/pokemon-species/', '');
-    pokemonUrl.replaceAll('https://pokeapi.co/api/v2/pokemon-species/', '');
-    int pokemonNumber = int.parse(pokemonUrl.replaceAll('/', ''));
-    String pokemonString = pokemonNumber.toString();
-    if (pokemonNumber < 10) {
-      pokemonString = "00$pokemonString";
-    } else if (pokemonNumber > 9 && pokemonNumber < 100) {
-      pokemonString = "0$pokemonString";
-    }
-    final imagePath =
-        "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/$pokemonString.png";
+      String pokemonUrl = pokemonEntries[index].pokemon_species.url;
+      pokemonUrl =
+          pokemonUrl.replaceAll('https://pokeapi.co/api/v2/pokemon-species/', '');
+      pokemonUrl.replaceAll('https://pokeapi.co/api/v2/pokemon-species/', '');
+      int pokemonNumber = int.parse(pokemonUrl.replaceAll('/', ''));
+      String pokemonString = pokemonNumber.toString();
+      if (pokemonNumber < 10) {
+        pokemonString = "00$pokemonString";
+      } else if (pokemonNumber > 9 && pokemonNumber < 100) {
+        pokemonString = "0$pokemonString";
+      }
+      final imagePath =
+          "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/$pokemonString.png";
 
-    return imagePath;
+      return imagePath;
   }
 }

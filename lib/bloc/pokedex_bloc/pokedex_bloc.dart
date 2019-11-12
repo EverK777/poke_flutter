@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
-import 'package:chopper/chopper.dart';
 import 'package:poke_flutter/bloc/bloc_provider.dart';
-import 'package:poke_flutter/models/Pokemon.dart';
+import 'package:poke_flutter/bloc/pokedex_bloc/team_transformer.dart';
+import 'package:poke_flutter/models/pokeTeam.dart';
 import 'package:poke_flutter/models/pokedex.dart';
 import 'package:poke_flutter/models/region.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:poke_flutter/data/poke_api_service.dart';
 
-class PokeDexBloc implements BlocBase {
+class PokeDexBloc  with TeamValidators implements BlocBase {
   BehaviorSubject<List<PokemonEntries>> _lisPokeMonsters = BehaviorSubject<List<PokemonEntries>>();
+  BehaviorSubject<double> _pokemonsSelected = BehaviorSubject.seeded(3);
+  BehaviorSubject<String> _teamName = BehaviorSubject();
+  BehaviorSubject<Poke> _pokeMon = BehaviorSubject();
+  BehaviorSubject<bool> _canStartCapturing = BehaviorSubject();
+  BehaviorSubject<int> _numberOfPokes = BehaviorSubject.seeded(0);
+  List<Poke> _pokemons = List();
 
   // sinks
   void getPokemonEntries(String regionName) async {
@@ -45,18 +50,47 @@ class PokeDexBloc implements BlocBase {
     return pokemonEntries;
   }
 
-    Future<Pokemon> _fechPokemons (String pokemonName) async{
-    final response = await PokemonApiService.create().getPokemon(pokemonName);
-    var decodedJson = json.decode(response.bodyString);
-    final Pokemon pokemon= Pokemon.fromJson(decodedJson);
-    return pokemon;
+  void changeNumberOfPokemons(double numberOfPokemons){
+    _pokemonsSelected.sink.add(numberOfPokemons);
   }
+
+  bool saveTeam(){
+    if(_pokemons.length >=3 &&_teamName.stream.value.isNotEmpty){
+      return true;
+    }
+
+    return false;
+  }
+
 
   // streams
   Stream<List<PokemonEntries>> get pokemonList => _lisPokeMonsters.stream;
+  Stream<double> get numberSelectedOfPoke => _pokemonsSelected.stream;
+  Stream<String> get teamName => _teamName.stream.transform(validateTeamName);
+
+  Stream<bool> get isStaringCapturing => _canStartCapturing.stream;
+  Stream<int> get numberOfPokemonsPicked => _numberOfPokes.stream;
+
+  Function(String) get changeTeamName => _teamName.sink.add;
+  Function(bool) get setStartCapturing => _canStartCapturing.sink.add;
+
+  void addPokemon(Poke poke){
+    _pokemons.add(poke);
+    _numberOfPokes.sink.add(_pokemons.length);
+    if(_pokemons.length == _pokemonsSelected.value.toInt()){
+      _canStartCapturing.sink.add(false);
+    }
+  }
+
+
 
   @override
   void dispose() {
     _lisPokeMonsters.close();
+    _pokemonsSelected.close();
+    _teamName.close();
+    _pokeMon.close();
+    _canStartCapturing.close();
+    _numberOfPokes.close();
   }
 }

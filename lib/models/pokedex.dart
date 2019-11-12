@@ -135,6 +135,7 @@ class Names {
 class PokemonEntries {
   int entryNumber;
   PokemonSpecies pokemon_species;
+  bool isCaptured = false;
 
   PokemonEntries({this.entryNumber, this.pokemon_species});
 
