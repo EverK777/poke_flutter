@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "543859696009",
+    "firebase_url": "https://pokeflutter-9023f.firebaseio.com",
+    "project_id": "pokeflutter-9023f",
+    "storage_bucket": "pokeflutter-9023f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543859696009:android:c26bbcd7631e66e43a0158",
+        "android_client_info": {
+          "package_name": "com.everapps777.poke_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "543859696009-9l8up9oijbn581ahsclq0ukbvjup90tk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfBV2AOBQHZhfzjujlC94JiewggBphTb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "543859696009-9l8up9oijbn581ahsclq0ukbvjup90tk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
