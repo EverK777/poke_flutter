@@ -15,7 +15,9 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
   BehaviorSubject<Poke> _pokeMon = BehaviorSubject();
   BehaviorSubject<bool> _canStartCapturing = BehaviorSubject();
   BehaviorSubject<int> _numberOfPokes = BehaviorSubject.seeded(0);
+  BehaviorSubject<double> _sliderState = BehaviorSubject.seeded(3);
   List<Poke> _pokemons = List();
+
 
   // sinks
   void getPokemonEntries(String regionName) async {
@@ -25,7 +27,14 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
       return;
     }
     _lisPokeMonsters.sink.add(pokeMonsters);
+
   }
+
+  void freePokemon(String pokemonName){
+    _pokemons.removeWhere((poke)=> poke.pokemonName.toLowerCase() == pokemonName.toLowerCase());
+    _numberOfPokes.sink.add(_pokemons.length);
+  }
+
 
   Future<List<PokemonEntries>> _getPokemonsFromRegion(String regionName) async {
     final response = await PokemonApiService.create().getRegion(regionName.toLowerCase());
@@ -50,7 +59,7 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
     return pokemonEntries;
   }
 
-  void changeNumberOfPokemons(double numberOfPokemons){
+   changeNumberOfPokemons(double numberOfPokemons){
     _pokemonsSelected.sink.add(numberOfPokemons);
   }
 
@@ -66,13 +75,23 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
   // streams
   Stream<List<PokemonEntries>> get pokemonList => _lisPokeMonsters.stream;
   Stream<double> get numberSelectedOfPoke => _pokemonsSelected.stream;
+  Stream<double> get sliderValueStream => _sliderState.stream;
   Stream<String> get teamName => _teamName.stream.transform(validateTeamName);
 
   Stream<bool> get isStaringCapturing => _canStartCapturing.stream;
   Stream<int> get numberOfPokemonsPicked => _numberOfPokes.stream;
 
+
+  Stream<Map> get canShowInitData => Observable.combineLatest3(
+      isStaringCapturing,
+      numberSelectedOfPoke,
+      numberOfPokemonsPicked, (isStarting,numberSelectedOfPoke,numberOfPokemonsPicked)=>
+         {'isStaring':isStarting,'numberOfPokeballs':numberSelectedOfPoke,'pokemonsPicker':numberOfPokemonsPicked});
+
+
   Function(String) get changeTeamName => _teamName.sink.add;
   Function(bool) get setStartCapturing => _canStartCapturing.sink.add;
+  Function(double) get setSliderValue => _sliderState.sink.add;
 
   void addPokemon(Poke poke){
     _pokemons.add(poke);
@@ -80,6 +99,18 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
     if(_pokemons.length == _pokemonsSelected.value.toInt()){
       _canStartCapturing.sink.add(false);
     }
+  }
+
+  void startCapturing(){
+    _canStartCapturing.sink.add(true);
+    _pokemonsSelected.sink.add(_sliderState.stream.value);
+  }
+
+  void restartProcess(){
+    _canStartCapturing.sink.add(true);
+    _numberOfPokes.sink.add(0);
+    _pokemonsSelected.sink.add(_sliderState.stream.value);
+    _pokemons.clear();
   }
 
 
@@ -92,5 +123,6 @@ class PokeDexBloc  with TeamValidators implements BlocBase {
     _pokeMon.close();
     _canStartCapturing.close();
     _numberOfPokes.close();
+    _sliderState.close();
   }
 }

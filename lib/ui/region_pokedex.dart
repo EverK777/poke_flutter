@@ -12,7 +12,7 @@ class RegionsPokeDex extends StatelessWidget {
   final String regionName;
   final int imageNumber;
   final teamFieldText = TextEditingController();
-
+  final List<PokemonEntries> pokemonEntries = List();
 
   RegionsPokeDex(this.regionName, this.imageNumber);
 
@@ -24,6 +24,11 @@ class RegionsPokeDex extends StatelessWidget {
     return StreamBuilder<List<PokemonEntries>>(
       stream: pokeDexBloc.pokemonList,
       builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          if (pokemonEntries.isEmpty) {
+            pokemonEntries.addAll(snapshot.data);
+          }
+        }
         return Scaffold(
             backgroundColor: Colors.white,
             body: Hero(
@@ -35,43 +40,25 @@ class RegionsPokeDex extends StatelessWidget {
                           stream: pokeDexBloc.isStaringCapturing,
                           builder: (context, snapshot) {
                             return Center(
-                                child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Center(
-                                    child: Visibility(
-                                        visible: snapshot.hasData,
-                                        child: StreamBuilder<double>(
-                                            stream: pokeDexBloc.numberSelectedOfPoke,
-                                            builder:
-                                                (context, numberOfPokemonSnap) {
-                                              if (numberOfPokemonSnap.hasData) {
-                                                return StreamBuilder<int>(
-                                                  stream: pokeDexBloc.numberOfPokemonsPicked,
-                                                  builder: (context, StreamNumberPicked){
-                                                    return Text(
-                                                      "${StreamNumberPicked.data.toString()}/${numberOfPokemonSnap.data.toInt()}",
-                                                      style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                          FontWeight.w600,
-                                                          fontSize: 15),
-                                                    );
-                                                  },
-                                                );
-                                              }
-                                              return Container();
-                                            }))),
-                                Container(
-                                    child: Visibility(
-                                  visible: snapshot.hasData,
-                                  child: IconButton(
-                                    icon: Icon(Icons.pets),
-                                    onPressed: () {},
-                                  ),
-                                )),
-                              ],
-                            ));
+                                child: Visibility(
+                                    visible: snapshot.hasData,
+                                    child: StreamBuilder<Map>(
+                                        stream: pokeDexBloc.canShowInitData,
+                                        builder:
+                                            (context, numberOfPokemonSnap) {
+                                          if (numberOfPokemonSnap.hasData) {
+                                            return Text(
+                                              "${numberOfPokemonSnap.data['pokemonsPicker'].toString()}/${numberOfPokemonSnap.data['numberOfPokeballs'].toInt()}",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 15),
+                                            );
+                                          }
+                                          return Container();
+                                        })
+                                )
+                            );
                           },
                         ),
                         StreamBuilder<bool>(
@@ -80,11 +67,19 @@ class RegionsPokeDex extends StatelessWidget {
                               return Visibility(
                                   visible: snapStarting.hasData,
                                   child: IconButton(
+                                      icon: Icon(Icons.pets),
+                                      onPressed: () {}));
+                            }),
+                        StreamBuilder<bool>(
+                            stream: pokeDexBloc.isStaringCapturing,
+                            builder: (context, snapStarting) {
+                              return Visibility(
+                                  visible: snapStarting.hasData,
+                                  child: IconButton(
                                       icon: Icon(Icons.save),
-                                      onPressed: () =>
-                                             pokeDexBloc.saveTeam()
-                                              ? (){}
-                                              : showErrorSave(context)));
+                                      onPressed: () => pokeDexBloc.saveTeam()
+                                          ? () {}
+                                          : showErrorSave(context)));
                             })
                       ],
                       pinned: true,
@@ -98,7 +93,7 @@ class RegionsPokeDex extends StatelessWidget {
                             fit: BoxFit.fill),
                       ),
                     ),
-                    containerPage(snapshot, context,pokeDexBloc)
+                    containerPage(snapshot, context, pokeDexBloc)
                   ],
                   physics: BouncingScrollPhysics(),
                 ),
@@ -117,7 +112,7 @@ class RegionsPokeDex extends StatelessWidget {
   }
 
   Widget itemGenerator(PokemonSpecies pokemon, screenH, BuildContext context,
-      List<PokemonEntries> pokemons, int index, PokeDexBloc pokeDexBloc) {
+      int index, PokeDexBloc pokeDexBloc) {
     String pokemonUrl = pokemon.url;
     pokemonUrl =
         pokemonUrl.replaceAll('https://pokeapi.co/api/v2/pokemon-species/', '');
@@ -131,8 +126,7 @@ class RegionsPokeDex extends StatelessWidget {
     final imagePath =
         "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/$pokemonString.png";
     return new Container(
-        child:
-        GestureDetector(
+        child: GestureDetector(
             child: Card(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
@@ -153,17 +147,28 @@ class RegionsPokeDex extends StatelessWidget {
                     ),
                     Flexible(
                         child: Center(
-                      child: FadeInImage.memoryNetwork(
-                        height: 65,
-                        width: 65,
-                        placeholder: kTransparentImage,
-                        image: imagePath,
-                      ),
-                    ))
+                            child: StreamBuilder(
+                                stream: pokeDexBloc.isStaringCapturing,
+                                builder: (context, _) {
+                                  return !pokemonEntries[index].isCaptured
+                                      ? FadeInImage.memoryNetwork(
+                                          height: 65,
+                                          width: 65,
+                                          placeholder: kTransparentImage,
+                                          image: imagePath,
+                                        )
+                                      : Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Image.asset(
+                                            'assets/images/miniPoke.png',
+                                            width: 65,
+                                            height: 65,
+                                          ));
+                                })))
                   ],
                 )),
             onTap: () {
-              _goToPokemonDetail(context, pokemons, index, pokeDexBloc);
+              _goToPokemonDetail(context, index, pokeDexBloc);
             }));
   }
 
@@ -221,6 +226,7 @@ class RegionsPokeDex extends StatelessWidget {
   }
 
   Widget sheetDialogView(PokeDexBloc bloc) {
+    int numberOfPokeBalls = 3;
     return Container(
         color: Colors.transparent,
         padding: EdgeInsets.all(25),
@@ -247,7 +253,7 @@ class RegionsPokeDex extends StatelessWidget {
                       Container(
                           margin: EdgeInsets.only(top: 15),
                           child: StreamBuilder<double>(
-                              stream: bloc.numberSelectedOfPoke,
+                              stream: bloc.sliderValueStream,
                               builder: (context, snapshot) {
                                 int numberOfPokes = snapshot.hasData
                                     ? snapshot.data.toInt()
@@ -258,17 +264,16 @@ class RegionsPokeDex extends StatelessWidget {
                       Container(
                           margin: EdgeInsets.only(top: 15),
                           child: StreamBuilder<double>(
-                            stream: bloc.numberSelectedOfPoke,
+                            stream: bloc.sliderValueStream,
                             builder: (context, snapshot) {
-                              double numberOfPokes =
-                                  snapshot.hasData ? snapshot.data : 3.0;
+                              double numberOfPokes = snapshot.hasData ? snapshot.data : 3.0;
                               return Center(
                                 child: Slider(
                                   activeColor: Colors.redAccent,
                                   min: 3.0,
                                   max: 6.0,
                                   onChanged: (newValue) {
-                                    bloc.changeNumberOfPokemons(newValue);
+                                    bloc.setSliderValue(newValue);
                                   },
                                   value: numberOfPokes,
                                 ),
@@ -283,32 +288,39 @@ class RegionsPokeDex extends StatelessWidget {
                           children: <Widget>[
                             StreamBuilder(
                               stream: bloc.isStaringCapturing,
-                              builder: (context,isCapturingSnap){
+                              builder: (context, isCapturingSnap) {
                                 var canCapture = !isCapturingSnap.hasData;
                                 return RaisedButton(
-                                    color: Colors.redAccent,
-                                    child: Center(
-                                      child: Text(
-                                       canCapture ? "Start to capture" : "Continue capturing",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                  color: Colors.redAccent,
+                                  child: Center(
+                                    child: Text(
+                                      canCapture
+                                          ? "Start to capture"
+                                          : "Restart capturing",
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                    elevation: 4,
-                                    shape: new RoundedRectangleBorder(
-                                      borderRadius: new BorderRadius.circular(5.0),
-                                      // side: BorderSide(color: Colors.red)),
-                                    ),
-                                    onPressed: snapshotTeamName.hasData
-                                        ? () {
-                                      if(!isCapturingSnap.hasData){
-                                        bloc.setStartCapturing(true);
-                                      }
-                                      teamFieldText.text =
-                                          snapshotTeamName.data;
-                                      Navigator.of(context).pop();
-                                    }
-                                        : null,
-                                  );
+                                  ),
+                                  elevation: 4,
+                                  shape: new RoundedRectangleBorder(
+                                    borderRadius:
+                                        new BorderRadius.circular(5.0),
+                                    // side: BorderSide(color: Colors.red)),
+                                  ),
+                                  onPressed: snapshotTeamName.hasData
+                                      ? () {
+                                          if (!isCapturingSnap.hasData) {
+                                            bloc.startCapturing();
+                                          }
+                                          else {
+                                            pokemonEntries.forEach((poke)=>poke.isCaptured =false);
+                                            bloc.restartProcess();
+                                          }
+                                          teamFieldText.text =
+                                              snapshotTeamName.data;
+                                          Navigator.of(context).pop();
+                                        }
+                                      : null,
+                                );
                               },
                             )
                           ],
@@ -332,16 +344,16 @@ class RegionsPokeDex extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center, children: pokeballs);
   }
 
-  void _goToPokemonDetail(
-      BuildContext context, List<PokemonEntries> pokemonEntries, int index, PokeDexBloc bloc) {
+  void _goToPokemonDetail(BuildContext context, int index, PokeDexBloc bloc) {
     var blocProviderCardCreate = BlocProvider(
         bloc: PokemonListBloc(),
-        child: PokemonDetailDialog(pokemonEntries, index,bloc));
+        child: PokemonDetailDialog(pokemonEntries, index, bloc));
     Navigator.of(context).push(MaterialPageRoute(
         fullscreenDialog: true, builder: (context) => blocProviderCardCreate));
   }
 
-  Widget containerPage(AsyncSnapshot snapshot, BuildContext context,PokeDexBloc bloc) {
+  Widget containerPage(
+      AsyncSnapshot snapshot, BuildContext context, PokeDexBloc bloc) {
     final screenSize = MediaQuery.of(context).size;
     if (snapshot.hasError) {
       return SliverFillRemaining(
@@ -360,13 +372,12 @@ class RegionsPokeDex extends StatelessWidget {
           ),
           delegate: SliverChildBuilderDelegate((context, index) {
             return itemGenerator(snapshot.data[index].pokemon_species,
-                screenSize.height, context, snapshot.data, index,bloc);
+                screenSize.height, context, index, bloc);
           }, childCount: snapshot.data.length));
     }
   }
 
   void showErrorSave(BuildContext context) {
-    print("ERROR");
     final snackBar = SnackBar(
       content: Text(
         'Error! Please use at least 3 pokeballs and add a valid team name!',

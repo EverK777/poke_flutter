@@ -118,35 +118,45 @@ class PokemonDetailDialog extends StatelessWidget {
                                       return StreamBuilder<bool>(
                                         stream: pokeDexBloc.isStaringCapturing,
                                         builder: (context, snapIsEditing){
-                                          var canEdit = false;
+                                          var canEdit = true;
                                           if(snapIsEditing.hasData){
-                                            if(snapIsEditing.data){
-                                              canEdit = true;
+                                            if(!snapIsEditing.data){
+                                              canEdit = false;
                                             }
                                           }
                                           return  Visibility(
-                                            visible: canEdit,
+                                            visible: snapIsEditing.hasData,
                                             child: RaisedButton(
                                               color: Colors.redAccent ,
                                               child: Center(
-                                                child: Text("Capture pokemon",style: TextStyle(color: Colors.white),),
+                                                child: Text(!pokemonEntries[_indexChanged].isCaptured
+                                                    ?  "Capture pokemon"
+                                                    :  "Free pokemon"
+                                                  ,style: TextStyle(color: Colors.white),),
                                               ),
                                               elevation: 4,
                                               shape: new RoundedRectangleBorder(
                                                 borderRadius: new BorderRadius.circular(5.0),
                                                 // side: BorderSide(color: Colors.red)),
-                                              ), onPressed: () {
-                                              final Poke pokeToSave = Poke(
-                                                  snapshot.data.id.toString(),
-                                                  snapshot.data.name,
-                                                  _getImagePath(_indexChanged),
-                                                  flavorText(snapshot.data),
-                                                  snapPoke.data.height.toString(),
-                                                  snapPoke.data.weight.toString()
-                                              );
-                                              pokeDexBloc.addPokemon(pokeToSave);
-                                              pokemonEntries[_indexChanged].isCaptured = true;
-                                            },
+                                              ), onPressed: canEdit || pokemonEntries[_indexChanged].isCaptured ? () {
+                                              if(pokemonEntries[_indexChanged].isCaptured){
+                                                //free pokemon
+                                                 freePokemon(_indexChanged);
+                                              }else {
+                                                //save pokemon
+                                                final Poke pokeToSave = Poke(
+                                                    snapshot.data.id.toString(),
+                                                    snapshot.data.name,
+                                                    _getImagePath(_indexChanged),
+                                                    flavorText(snapshot.data),
+                                                    snapPoke.data.height.toString(),
+                                                    snapPoke.data.weight.toString()
+                                                );
+                                                pokeDexBloc.setStartCapturing(true);
+                                                pokeDexBloc.addPokemon(pokeToSave);
+                                                pokemonEntries[_indexChanged].isCaptured = true;
+                                              }
+                                            }:null,
                                             ),
                                           );
                                         },
@@ -167,30 +177,31 @@ class PokemonDetailDialog extends StatelessWidget {
                   top: 30.0,
                   left: 0.0,
                   right: 0.0,
-                  child:
-                      StreamBuilder(
-                        stream: pokeDexBloc.numberOfPokemonsPicked,
-                        builder: (context,_){
-                          return   Swiper(
+                  child:  Swiper(
                               itemBuilder: (BuildContext context, int index) {
-                                return !pokemonEntries[index].isCaptured ? FadeInImage.memoryNetwork(
-                                    height: 150,
-                                    width: 150,
-                                    placeholder: kTransparentImage,
-                                    image: _getImagePath(index)):
-                                Image.asset(
-                                  'assets/images/miniPoke.png',
-                                  width: 150,
-                                  height: 150,
+                                return StreamBuilder(
+                                  stream:  pokeDexBloc.numberOfPokemonsPicked ,
+                                  builder: (context, _){
+                                    return  !pokemonEntries[index].isCaptured ? FadeInImage.memoryNetwork(
+                                        height: 150,
+                                        width: 150,
+                                        placeholder: kTransparentImage,
+                                        image: _getImagePath(index)):
+                                    Image.asset(
+                                      'assets/images/miniPoke.png',
+                                      width: 150,
+                                      height: 150,
+                                    );
+                                  }
                                 );
                               },
                               itemCount: pokemonEntries.length,
                               layout: SwiperLayout.CUSTOM,
-                              onIndexChanged: (index) {
-                                var newIndex = index;
-                                if (newIndex == pokemonEntries.length - 1 &&
+                              onIndexChanged: (indexChanged) {
+                                var newIndex = indexChanged;
+                                if (newIndex == pokemonEntries.length-1  &&
                                     _oldIndex == 0) {
-                                  newIndex = index * -1;
+                                  newIndex = indexChanged * -1;
                                 }
 
                                 if (newIndex == 0) {
@@ -209,7 +220,7 @@ class PokemonDetailDialog extends StatelessWidget {
 
                                 bloc.setPokemonName(
                                     pokemonEntries[_indexChanged].pokemon_species.name);
-                                _oldIndex = index;
+                                _oldIndex = indexChanged;
                                 bloc.setPokemonDescription(
                                     pokemonEntries[_indexChanged].pokemon_species.name);
                                 bloc.setPokemonInfo(
@@ -226,9 +237,7 @@ class PokemonDetailDialog extends StatelessWidget {
                                 new Offset(-200.0, -10.0),
                                 new Offset(0.0, 0.0),
                                 new Offset(200.0, -10.0)
-                              ]));
-                        }
-                      )
+                              ]))
                 )
               ],
             ),
@@ -273,6 +282,11 @@ class PokemonDetailDialog extends StatelessWidget {
     );
   }
 
+  void freePokemon(int index){
+    pokemonEntries[index].isCaptured = false;
+    pokeDexBloc.setStartCapturing(true);
+    pokeDexBloc.freePokemon(pokemonEntries[index].pokemon_species.name);
+  }
 
   String flavorText(PokemonDescription pokemonDescription) {
     for (int i = 0; i < pokemonDescription.flavorTextEntries.length; i++) {
