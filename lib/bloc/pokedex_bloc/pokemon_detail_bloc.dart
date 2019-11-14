@@ -28,6 +28,7 @@ class PokemonListBloc implements BlocBase{
   }
 
   void setPokemonDescription(String pokemonName) async {
+    _pokemonDescription.sink.add(null);
     final pokeName = pokemonName.toLowerCase();
     final response = await PokemonApiService.create().getPokemonSpecie(pokeName);
     var decodedJson = json.decode(response.bodyString);

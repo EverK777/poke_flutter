@@ -44,7 +44,7 @@ class PokemonDetailDialog extends StatelessWidget {
             backgroundColor: colorChange,
           ),
           body: Container(
-            height: double.infinity,
+            height: _screenSize.height*0.70,
             color: colorChange,
             child: Stack(
               children: <Widget>[
@@ -72,7 +72,7 @@ class PokemonDetailDialog extends StatelessWidget {
                   top: 120.0,
                   child: Container(
                     width: _screenSize.width,
-                    height: _screenSize.height * 0.8,
+                    height: _screenSize.height * 0.66,
                     decoration: new BoxDecoration(
                         borderRadius: new BorderRadius.only(
                             topLeft: const Radius.circular(40.0),
@@ -89,7 +89,7 @@ class PokemonDetailDialog extends StatelessWidget {
                             );
                           }
                           return Container(
-                            margin: EdgeInsets.only(top: 15),
+                            margin: EdgeInsets.only(top: 10),
                             child: ListView(
                               children: <Widget>[
                                 Text(
@@ -111,7 +111,7 @@ class PokemonDetailDialog extends StatelessWidget {
                                 ),
                                 Container(
                                   height: 45,
-                                  margin: EdgeInsets.only(top: 85),
+                                  margin: EdgeInsets.only(top: 27),
                                   child: StreamBuilder<Pokemon>(
                                     stream: bloc.getPokemonInfo,
                                     builder: (context, snapPoke){
@@ -187,11 +187,14 @@ class PokemonDetailDialog extends StatelessWidget {
                                         width: 150,
                                         placeholder: kTransparentImage,
                                         image: _getImagePath(index)):
-                                    Image.asset(
-                                      'assets/images/miniPoke.png',
-                                      width: 150,
-                                      height: 150,
-                                    );
+                                   Padding(
+                                     padding: EdgeInsets.all(35),
+                                     child:  Image.asset(
+                                       'assets/images/pokeball.png',
+                                       width: 150,
+                                       height: 150,
+                                     ),
+                                   );
                                   }
                                 );
                               },
@@ -221,6 +224,7 @@ class PokemonDetailDialog extends StatelessWidget {
                                 bloc.setPokemonName(
                                     pokemonEntries[_indexChanged].pokemon_species.name);
                                 _oldIndex = indexChanged;
+
                                 bloc.setPokemonDescription(
                                     pokemonEntries[_indexChanged].pokemon_species.name);
                                 bloc.setPokemonInfo(

@@ -26,7 +26,7 @@ class _RegionsState extends State<Regions> {
     return Container(
       height: _screenSize.height -
           (_screenSize.height * 0.30 - (MediaQuery.of(context).padding.top)) -
-          75.0,
+          99.0,
       width: double.infinity,
       color: Colors.white,
       child: Column(
