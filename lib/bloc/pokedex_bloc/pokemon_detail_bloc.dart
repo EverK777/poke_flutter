@@ -11,6 +11,7 @@ class PokemonListBloc implements BlocBase{
   BehaviorSubject<String> _pokemonName = BehaviorSubject<String>();
   BehaviorSubject<Pokemon> _pokemonInfo = BehaviorSubject<Pokemon>();
   BehaviorSubject<PokemonDescription> _pokemonDescription = BehaviorSubject<PokemonDescription>();
+  BehaviorSubject<String> _backgroundColor = BehaviorSubject<String>();
 
 
   void setPokemonName(String name){
@@ -34,12 +35,16 @@ class PokemonListBloc implements BlocBase{
     var decodedJson = json.decode(response.bodyString);
     final PokemonDescription pokeDescr = PokemonDescription.fromJson(decodedJson);
     _pokemonDescription.sink.add(pokeDescr);
+    if(pokeDescr !=null){
+      _backgroundColor.sink.add(pokeDescr.color.name);
+    }
  }
 
   // streams
   Stream<String> get getPokemonName => _pokemonName.stream;
   Stream<Pokemon> get getPokemonInfo => _pokemonInfo.stream;
   Stream<PokemonDescription> get getPokemonDescription => _pokemonDescription.stream;
+  Stream<String> get getBackgroundColor => _backgroundColor.stream;
 
   Stream<bool> get getFullPokemonInfo => Observable.combineLatest2(
       getPokemonInfo, getPokemonDescription, (pokeInfo,pokeDescription)=>true);
@@ -51,5 +56,6 @@ class PokemonListBloc implements BlocBase{
     _pokemonName.close();
     _pokemonInfo.close();
     _pokemonDescription.close();
+    _backgroundColor.close();
   }
 }

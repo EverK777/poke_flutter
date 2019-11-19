@@ -30,12 +30,12 @@ class PokemonDetailDialog extends StatelessWidget {
     bloc.setPokemonDescription(
         pokemonEntries[currentIndex].pokemon_species.name);
     final _screenSize = MediaQuery.of(context).size;
-    return StreamBuilder<PokemonDescription>(
-      stream: bloc.getPokemonDescription,
+    return StreamBuilder<String>(
+      stream: bloc.getBackgroundColor,
       builder: (context, snapshot) {
         Color colorChange = mainColors.Color.fromRGBO(3, 164, 244, 1.0);
         if (snapshot.hasData) {
-          colorChange = ColorReferences.getColor(snapshot.data.color.name);
+          colorChange = ColorReferences.getColor(snapshot.data);
         }
         return Scaffold(
           backgroundColor: Colors.white,
@@ -44,7 +44,7 @@ class PokemonDetailDialog extends StatelessWidget {
             backgroundColor: colorChange,
           ),
           body: Container(
-            height: _screenSize.height*0.70,
+            height: _screenSize.height*0.86,
             color: colorChange,
             child: Stack(
               children: <Widget>[
@@ -126,38 +126,41 @@ class PokemonDetailDialog extends StatelessWidget {
                                           }
                                           return  Visibility(
                                             visible: snapIsEditing.hasData,
-                                            child: RaisedButton(
-                                              color: Colors.redAccent ,
-                                              child: Center(
-                                                child: Text(!pokemonEntries[_indexChanged].isCaptured
-                                                    ?  "Capture pokemon"
-                                                    :  "Free pokemon"
-                                                  ,style: TextStyle(color: Colors.white),),
+                                            child: Container(
+                                              margin: EdgeInsets.only(bottom: 8),
+                                              child:  RaisedButton(
+                                                color: Colors.redAccent ,
+                                                child: Center(
+                                                  child: Text(!pokemonEntries[_indexChanged].isCaptured
+                                                      ?  "Capture pokemon"
+                                                      :  "Free pokemon"
+                                                    ,style: TextStyle(color: Colors.white),),
+                                                ),
+                                                elevation: 2,
+                                                shape: new RoundedRectangleBorder(
+                                                  borderRadius: new BorderRadius.circular(5.0),
+                                                  // side: BorderSide(color: Colors.red)),
+                                                ), onPressed: canEdit || pokemonEntries[_indexChanged].isCaptured ? () {
+                                                if(pokemonEntries[_indexChanged].isCaptured){
+                                                  //free pokemon
+                                                  freePokemon(_indexChanged);
+                                                }else {
+                                                  //save pokemon
+                                                  final Poke pokeToSave = Poke(
+                                                      snapshot.data.id.toString(),
+                                                      snapshot.data.name,
+                                                      _getImagePath(_indexChanged),
+                                                      flavorText(snapshot.data),
+                                                      snapPoke.data.height.toString(),
+                                                      snapPoke.data.weight.toString()
+                                                  );
+                                                  pokeDexBloc.setStartCapturing(true);
+                                                  pokeDexBloc.addPokemon(pokeToSave);
+                                                  pokemonEntries[_indexChanged].isCaptured = true;
+                                                }
+                                              }:null,
                                               ),
-                                              elevation: 4,
-                                              shape: new RoundedRectangleBorder(
-                                                borderRadius: new BorderRadius.circular(5.0),
-                                                // side: BorderSide(color: Colors.red)),
-                                              ), onPressed: canEdit || pokemonEntries[_indexChanged].isCaptured ? () {
-                                              if(pokemonEntries[_indexChanged].isCaptured){
-                                                //free pokemon
-                                                 freePokemon(_indexChanged);
-                                              }else {
-                                                //save pokemon
-                                                final Poke pokeToSave = Poke(
-                                                    snapshot.data.id.toString(),
-                                                    snapshot.data.name,
-                                                    _getImagePath(_indexChanged),
-                                                    flavorText(snapshot.data),
-                                                    snapPoke.data.height.toString(),
-                                                    snapPoke.data.weight.toString()
-                                                );
-                                                pokeDexBloc.setStartCapturing(true);
-                                                pokeDexBloc.addPokemon(pokeToSave);
-                                                pokemonEntries[_indexChanged].isCaptured = true;
-                                              }
-                                            }:null,
-                                            ),
+                                            )
                                           );
                                         },
                                       );
