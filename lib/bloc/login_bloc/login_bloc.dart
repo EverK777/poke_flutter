@@ -4,7 +4,7 @@ import 'package:poke_flutter/bloc/login_bloc/login_validator.dart';
 import 'package:poke_flutter/data/firebase_repository.dart';
 import 'package:rxdart/rxdart.dart';
 
-class LoginBloc with LoginValidator implements BlocBase{
+class LoginBloc with LoginValidator,FirebaseRepository implements BlocBase{
 
   BehaviorSubject<String> _emailController = BehaviorSubject<String>();
   BehaviorSubject<String> _passwordController = BehaviorSubject<String>();
