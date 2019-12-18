@@ -54,9 +54,7 @@ class Login extends StatelessWidget {
               ),
             ),
             ConstrainedBox(
-              constraints:BoxConstraints(
-                minHeight: _screenSize.height*0.60
-              ),
+              constraints: BoxConstraints(minHeight: _screenSize.height * 0.60),
               child: Container(
                 width: _screenSize.width,
                 decoration: new BoxDecoration(
@@ -121,7 +119,8 @@ class Login extends StatelessWidget {
                             )
                           ],
                         ),
-                      )
+                      ),
+                      registerUser()
                     ],
                   ),
                 ),
@@ -206,29 +205,22 @@ class Login extends StatelessWidget {
       ),
     );
   }
-}
 
-class ShapesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    // set the paint color to be white
-    // paint.color = Color.fromRGBO(21, 74, 25, 200);
-    // Create a rectangle with size and width same as the canvas
-    // var rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    // draw the rectangle using the paint
-    // canvas.drawRect(rect, paint);
-    paint.color = Colors.lightBlue;
-    // create a path
-    var path = Path();
-    path.lineTo(0, 20000);
-    path.lineTo(size.width, 20000);
-    path.lineTo(size.width, 0);
-    // close the path to form a bounded shape
-    path.close();
-    canvas.drawPath(path, paint);
+  Widget registerUser() {
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+      Container(
+        margin: EdgeInsets.only(right: 20),
+        child: Text(
+          "Don't have a account?",
+          style: TextStyle(color: Colors.black26),
+        ),
+      ),
+      FlatButton(
+          child: Text(
+            "Register now",
+            style: TextStyle(color: Colors.redAccent),
+          ),
+          onPressed: () {})
+    ]);
   }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
